@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AES Decrypt Tool</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 24px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+        .output.show {
+            display: block;
+        }
+        .output h3 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 16px;
+        }
+        .output pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .output img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+        }
+        .error {
+            background: #fee;
+            border-left-color: #e74c3c;
+            color: #c0392b;
+        }
+        .success {
+            background: #efe;
+            border-left-color: #27ae60;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .tab-buttons button {
+            flex: 1;
+            background: #eee;
+            color: #333;
+            margin: 0;
+        }
+        .tab-buttons button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 AES Decrypt Tool</h1>
+
+        <div class="form-group">
+            <label for="encryptedInput">Encrypted Base64 String:</label>
+            <textarea id="encryptedInput" placeholder="Paste encrypted base64 here..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="keyInput">Secret Key (32 characters):</label>
+            <input type="text" id="keyInput" value="12345678901234567890123456789012" placeholder="Enter 32-char key">
+        </div>
+
+        <div class="tab-buttons">
+            <button id="btnText" class="active" onclick="setOutputType('text')">📝 Text Output</button>
+            <button id="btnImage" onclick="setOutputType('image')">🖼️ Image Output</button>
+        </div>
+
+        <button onclick="decryptData()">🔓 Decrypt</button>
+
+        <div id="output" class="output">
+            <h3 id="outputTitle">Decrypted Output:</h3>
+            <div id="outputContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let outputType = 'text';
+
+        function setOutputType(type) {
+            outputType = type;
+            document.getElementById('btnText').classList.toggle('active', type === 'text');
+            document.getElementById('btnImage').classList.toggle('active', type === 'image');
+        }
+
+        async function decryptData() {
+            const encryptedBase64 = document.getElementById('encryptedInput').value.trim();
+            const keyString = document.getElementById('keyInput').value.trim();
+            const outputDiv = document.getElementById('output');
+            const outputTitle = document.getElementById('outputTitle');
+            const outputContent = document.getElementById('outputContent');
+
+            // Reset
+            outputDiv.className = 'output show';
+            outputContent.innerHTML = '';
+
+            // Validation
+            if (!encryptedBase64) {
+                outputDiv.className = 'output show error';
+                outputTitle.textContent = '❌ Error';
+                outputContent.innerHTML = '<p>Please paste encrypted base64 string.</p>';
+                return;
+            }
+
+            if (keyString.length !== 32) {
+                outputDiv.className = 'output show error';
+                outputTitle.textContent = '❌ Error';
+                outputContent.innerHTML = '<p>Key must be exactly 32 characters. Current length: ' + keyString.length + '</p>';
+                return;
+            }
+
+            try {
+                // 1. Base64 decode
+                const encryptedBytes = base64ToBytes(encryptedBase64);
+
+                if (encryptedBytes.length < 16) {
+                    throw new Error('Encrypted data too short (minimum 16 bytes for IV).');
+                }
+
+                // 2. Extract IV (first 16 bytes)
+                const iv = encryptedBytes.slice(0, 16);
+                const cipherBytes = encryptedBytes.slice(16);
+
+                // 3. Key
+                const keyBytes = new TextEncoder().encode(keyString);
+
+                // 4. Import key
+                const cryptoKey = await crypto.subtle.importKey(
+                    'raw',
+                    keyBytes,
+                    { name: 'AES-CBC' },
+                    false,
+                    ['decrypt']
+                );
+
+                // 5. Decrypt
+                const decryptedBuffer = await crypto.subtle.decrypt(
+                    { name: 'AES-CBC', iv: iv },
+                    cryptoKey,
+                    cipherBytes
+                );
+
+                const decryptedBytes = new Uint8Array(decryptedBuffer);
+
+                // 6. Output
+                outputDiv.className = 'output show success';
+
+                if (outputType === 'image') {
+                    // Image output
+                    const base64Image = bytesToBase64(decryptedBytes);
+                    const dataUrl = 'data:image/png;base64,' + base64Image;
+
+                    outputTitle.textContent = '🖼️ Decrypted Image:';
+                    outputContent.innerHTML = `
+                        <p style="margin-bottom: 10px; color: #27ae60;">✅ Decryption successful! (${decryptedBytes.length} bytes)</p>
+                        <img src="${dataUrl}" alt="Decrypted Image" />
+                        <br><br>
+                        <a href="${dataUrl}" download="decrypted_image.png" style="display: inline-block; padding: 8px 16px; background: #27ae60; color: white; text-decoration: none; border-radius: 5px;">⬇️ Download Image</a>
+                    `;
+                } else {
+                    // Text output
+                    let text;
+                    try {
+                        text = new TextDecoder('utf-8', { fatal: true }).decode(decryptedBytes);
+                    } catch {
+                        // Binary data — show as base64
+                        text = '[Binary data — Base64 output below]\n\n' + bytesToBase64(decryptedBytes);
+                    }
+
+                    outputTitle.textContent = '📝 Decrypted Text:';
+                    outputContent.innerHTML = `
+                        <p style="margin-bottom: 10px; color: #27ae60;">✅ Decryption successful! (${decryptedBytes.length} bytes)</p>
+                        <pre>${escapeHtml(text)}</pre>
+                    `;
+                }
+            } catch (error) {
+                outputDiv.className = 'output show error';
+                outputTitle.textContent = '❌ Decryption Failed';
+                outputContent.innerHTML = `
+                    <p><strong>Error:</strong> ${escapeHtml(error.message)}</p>
+                    <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                        Possible reasons:<br>
+                        • Wrong key<br>
+                        • Wrong IV (first 16 bytes)<br>
+                        • Data not encrypted with AES-CBC<br>
+                        • Corrupted base64
+                    </p>
+                `;
+            }
+        }
+
+        // Helper: Base64 → Uint8Array
+        function base64ToBytes(base64) {
+            const binaryString = atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes;
+        }
+
+        // Helper: Uint8Array → Base64
+        function bytesToBase64(bytes) {
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        // Helper: Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
