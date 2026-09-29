@@ -6,348 +6,289 @@
     <title>AES Decrypt Tool</title>
     <style>
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f7fa;
             min-height: 100vh;
-            padding: 20px;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #2c3e50;
         }
+
         .container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 30px;
-            max-width: 750px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 40px;
             width: 100%;
+            max-width: 600px;
         }
+
         h1 {
-            color: #333;
-            margin-bottom: 20px;
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 8px;
             text-align: center;
-            font-size: 24px;
         }
+
+        .subtitle {
+            font-size: 14px;
+            color: #718096;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
+
         label {
             display: block;
-            margin-bottom: 5px;
-            color: #555;
-            font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 6px;
         }
-        .required {
-            color: red;
-        }
-        input, textarea, select {
+
+        textarea,
+        input[type="text"] {
             width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
+            padding: 12px 14px;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             font-size: 14px;
-            font-family: 'Courier New', monospace;
-            transition: border-color 0.3s;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            color: #2d3748;
+            background: #f7fafc;
+            transition: all 0.2s ease;
         }
-        input:focus, textarea:focus, select:focus {
+
+        textarea:focus,
+        input[type="text"]:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4299e1;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
         }
+
         textarea {
-            min-height: 100px;
+            min-height: 90px;
             resize: vertical;
         }
-        .key-info {
+
+        .hint {
             font-size: 12px;
-            color: #888;
-            margin-top: 3px;
+            color: #a0aec0;
+            margin-top: 4px;
         }
-        .key-valid {
-            color: #27ae60;
-        }
-        .key-invalid {
-            color: #e74c3c;
-        }
+
         button {
             width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            padding: 14px;
+            background: #4299e1;
+            color: #ffffff;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: background 0.2s ease;
             margin-top: 10px;
         }
-        button:hover {
-            transform: translateY(-2px);
+
+        button:hover:not(:disabled) {
+            background: #3182ce;
         }
-        button:active {
-            transform: translateY(0);
+
+        button:active:not(:disabled) {
+            background: #2b6cb0;
         }
+
         button:disabled {
-            opacity: 0.6;
+            background: #cbd5e0;
             cursor: not-allowed;
         }
+
         .output {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
+            margin-top: 25px;
+            padding: 20px;
             border-radius: 8px;
-            border-left: 4px solid #667eea;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
             display: none;
         }
+
         .output.show {
             display: block;
         }
-        .output h3 {
-            margin-bottom: 10px;
-            color: #333;
-            font-size: 16px;
+
+        .output.error {
+            background: #fff5f5;
+            border-color: #fed7d7;
         }
-        .output pre {
-            background: #2d2d2d;
-            color: #f8f8f2;
-            padding: 10px;
-            border-radius: 5px;
-            overflow-x: auto;
+
+        .output.success {
+            background: #f0fff4;
+            border-color: #c6f6d5;
+        }
+
+        .output-label {
             font-size: 12px;
-            max-height: 250px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            color: #718096;
+        }
+
+        .output.error .output-label {
+            color: #c53030;
+        }
+
+        .output.success .output-label {
+            color: #2f855a;
+        }
+
+        .output pre {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            overflow-x: auto;
+            max-height: 300px;
             overflow-y: auto;
             white-space: pre-wrap;
-            word-wrap: break-word;
+            word-break: break-word;
         }
+
         .output img {
             max-width: 100%;
-            border-radius: 8px;
-            margin-top: 10px;
-            border: 1px solid #ddd;
+            border-radius: 6px;
+            display: block;
+            margin: 10px 0;
+            border: 1px solid #e2e8f0;
         }
-        .error {
-            background: #fee;
-            border-left-color: #e74c3c;
-            color: #c0392b;
+
+        .output p {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #2d3748;
         }
-        .success {
-            background: #efe;
-            border-left-color: #27ae60;
-        }
-        .info-box {
-            background: #e8f4fd;
-            border-left: 4px solid #3498db;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
+
+        .download-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #48bb78;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
             font-size: 13px;
-            color: #2c3e50;
+            font-weight: 600;
+            transition: background 0.2s ease;
         }
-        .info-box code {
-            background: #d6eaf8;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
+
+        .download-btn:hover {
+            background: #38a169;
         }
-        .btn-row {
-            display: flex;
-            gap: 10px;
+
+        .key-status {
+            font-size: 12px;
+            margin-top: 4px;
+            color: #a0aec0;
         }
-        .btn-row button {
-            flex: 1;
+
+        .key-status.valid {
+            color: #38a169;
         }
-        .btn-clear {
-            background: #95a5a6 !important;
-        }
-        .btn-clear:hover {
-            background: #7f8c8d !important;
+
+        .key-status.invalid {
+            color: #e53e3e;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔐 AES Decrypt Tool</h1>
+        <h1>AES Decrypt Tool</h1>
+        <p class="subtitle">Decrypt AES-256 encrypted data</p>
 
-        <div class="info-box">
-            💡 <strong>Tip:</strong> Copy the encrypted data from SSMS, enter the secret key, and click Decrypt.
-        </div>
-
-        <!-- Encrypted Data Input -->
         <div class="form-group">
-            <label for="encryptedInput">
-                Encrypted Base64 String <span class="required">*</span>
-            </label>
+            <label for="encryptedInput">Encrypted Data (Base64)</label>
             <textarea id="encryptedInput" 
-                      placeholder="Paste encrypted base64 string here..."></textarea>
-            <div class="key-info" id="encryptedInfo">0 characters</div>
+                      placeholder="Paste encrypted base64 string..."></textarea>
         </div>
 
-        <!-- Secret Key Input -->
         <div class="form-group">
-            <label for="keyInput">
-                Secret Key (32 characters) <span class="required">*</span>
-            </label>
+            <label for="keyInput">Secret Key</label>
             <input type="text" 
                    id="keyInput" 
-                   placeholder="Enter 32-character secret key"
+                   placeholder="Enter 32-character key"
                    maxlength="32"
-                   autocomplete="off" />
-            <div class="key-info" id="keyInfo">Key length: 0 / 32</div>
+                   autocomplete="off">
+            <div class="key-status" id="keyStatus">0 / 32 characters</div>
         </div>
 
-        <!-- IV Input (Optional) -->
-        <div class="form-group">
-            <label for="ivInput">
-                IV (Optional — only if provided separately)
-            </label>
-            <input type="text" 
-                   id="ivInput" 
-                   placeholder="Enter IV (base64) — leave empty if IV is included in ciphertext"
-                   autocomplete="off" />
-            <div class="key-info">Leave empty if IV is the first 16 bytes of the ciphertext</div>
-        </div>
+        <button onclick="decryptData()" id="decryptBtn">Decrypt</button>
 
-        <!-- Output Type -->
-        <div class="form-group">
-            <label for="outputType">Output Type:</label>
-            <select id="outputType">
-                <option value="auto">Auto Detect (Text/Image)</option>
-                <option value="text">📝 Text Output</option>
-                <option value="image">🖼️ Image Output</option>
-            </select>
-        </div>
-
-        <!-- Buttons -->
-        <div class="btn-row">
-            <button onclick="decryptData()" id="decryptBtn">🔓 Decrypt</button>
-            <button onclick="clearAll()" class="btn-clear">🗑️ Clear</button>
-        </div>
-
-        <!-- Output -->
         <div id="output" class="output">
-            <h3 id="outputTitle">Decrypted Output:</h3>
+            <div class="output-label" id="outputLabel">Result</div>
             <div id="outputContent"></div>
         </div>
     </div>
 
     <script>
-        // ============================================
-        // INPUT VALIDATION
-        // ============================================
-
-        document.getElementById('keyInput').addEventListener('input', function() {
+        // Key validation
+        document.getElementById('keyInput').addEventListener('input', function () {
             const len = this.value.length;
-            const info = document.getElementById('keyInfo');
-            info.textContent = `Key length: ${len} / 32`;
-            
+            const status = document.getElementById('keyStatus');
+            status.textContent = `${len} / 32 characters`;
+
             if (len === 32) {
-                info.className = 'key-info key-valid';
-                info.textContent += ' ✅ Valid';
+                status.className = 'key-status valid';
+                status.textContent += ' ✓';
             } else {
-                info.className = 'key-info key-invalid';
-                info.textContent += ' ❌ Must be 32 characters';
+                status.className = 'key-status invalid';
             }
         });
 
-        document.getElementById('encryptedInput').addEventListener('input', function() {
-            const len = this.value.trim().length;
-            document.getElementById('encryptedInfo').textContent = `${len} characters`;
-        });
-
-        // ============================================
-        // MAIN DECRYPT FUNCTION
-        // ============================================
-
+        // Main decrypt function
         async function decryptData() {
             const encryptedBase64 = document.getElementById('encryptedInput').value.trim();
             const keyString = document.getElementById('keyInput').value.trim();
-            const ivInput = document.getElementById('ivInput').value.trim();
-            const outputType = document.getElementById('outputType').value;
-            
-            const outputDiv = document.getElementById('output');
-            const outputTitle = document.getElementById('outputTitle');
+            const output = document.getElementById('output');
+            const outputLabel = document.getElementById('outputLabel');
             const outputContent = document.getElementById('outputContent');
-            const decryptBtn = document.getElementById('decryptBtn');
+            const btn = document.getElementById('decryptBtn');
 
-            // Reset
-            outputDiv.className = 'output show';
+            output.className = 'output show';
             outputContent.innerHTML = '';
-            decryptBtn.disabled = true;
-            decryptBtn.textContent = '⏳ Decrypting...';
+            btn.disabled = true;
+            btn.textContent = 'Decrypting...';
 
             try {
-                // ============================================
-                // VALIDATION
-                // ============================================
-                
-                if (!encryptedBase64) {
-                    throw new Error('Please paste encrypted base64 string.');
-                }
+                // Validation
+                if (!encryptedBase64) throw new Error('Please paste encrypted data.');
+                if (keyString.length !== 32) throw new Error('Key must be 32 characters.');
 
-                if (!keyString) {
-                    throw new Error('Please enter secret key.');
-                }
+                // Base64 decode
+                const encryptedBytes = base64ToBytes(encryptedBase64);
+                if (encryptedBytes.length < 16) throw new Error('Data too short.');
 
-                if (keyString.length !== 32) {
-                    throw new Error(`Key must be exactly 32 characters. Current: ${keyString.length}`);
-                }
+                // Extract IV (first 16 bytes)
+                const iv = encryptedBytes.slice(0, 16);
+                const cipherBytes = encryptedBytes.slice(16);
 
-                // ============================================
-                // BASE64 DECODE
-                // ============================================
-                
-                let encryptedBytes;
-                try {
-                    encryptedBytes = base64ToBytes(encryptedBase64);
-                } catch (e) {
-                    throw new Error('Invalid base64 string. Please check the encrypted data.');
-                }
-
-                if (encryptedBytes.length < 16) {
-                    throw new Error('Encrypted data too short (minimum 16 bytes for IV).');
-                }
-
-                // ============================================
-                // IV EXTRACTION
-                // ============================================
-                
-                let iv, cipherBytes;
-
-                if (ivInput) {
-                    // User provided IV separately
-                    try {
-                        iv = base64ToBytes(ivInput);
-                    } catch (e) {
-                        throw new Error('Invalid IV base64 string.');
-                    }
-                    
-                    if (iv.length !== 16) {
-                        throw new Error(`IV must be 16 bytes. Current: ${iv.length}`);
-                    }
-                    
-                    cipherBytes = encryptedBytes;
-                } else {
-                    // IV is first 16 bytes of ciphertext
-                    iv = encryptedBytes.slice(0, 16);
-                    cipherBytes = encryptedBytes.slice(16);
-                }
-
-                // ============================================
-                // KEY
-                // ============================================
-                
+                // Import key
                 const keyBytes = new TextEncoder().encode(keyString);
-
-                // ============================================
-                // IMPORT KEY
-                // ============================================
-                
                 const cryptoKey = await crypto.subtle.importKey(
                     'raw',
                     keyBytes,
@@ -356,10 +297,7 @@
                     ['decrypt']
                 );
 
-                // ============================================
-                // DECRYPT
-                // ============================================
-                
+                // Decrypt
                 const decryptedBuffer = await crypto.subtle.decrypt(
                     { name: 'AES-CBC', iv: iv },
                     cryptoKey,
@@ -368,149 +306,86 @@
 
                 const decryptedBytes = new Uint8Array(decryptedBuffer);
 
-                // ============================================
-                // OUTPUT
-                // ============================================
-                
-                outputDiv.className = 'output show success';
+                // Output
+                output.className = 'output show success';
+                outputLabel.textContent = 'Decrypted Successfully';
 
-                // Auto-detect type
-                let finalType = outputType;
-                if (outputType === 'auto') {
-                    finalType = detectType(decryptedBytes);
-                }
+                // Detect type
+                const type = detectType(decryptedBytes);
 
-                if (finalType === 'image') {
-                    showImageOutput(decryptedBytes, outputTitle, outputContent);
+                if (type === 'image') {
+                    showImage(decryptedBytes, outputContent);
                 } else {
-                    showTextOutput(decryptedBytes, outputTitle, outputContent);
+                    showText(decryptedBytes, outputContent);
                 }
 
             } catch (error) {
-                outputDiv.className = 'output show error';
-                outputTitle.textContent = '❌ Decryption Failed';
-                outputContent.innerHTML = `
-                    <p><strong>Error:</strong> ${escapeHtml(error.message)}</p>
-                    <p style="margin-top: 10px; font-size: 12px; color: #666;">
-                        <strong>Possible reasons:</strong><br>
-                        • Wrong key (must be 32 characters)<br>
-                        • Wrong IV<br>
-                        • Data not encrypted with AES-CBC<br>
-                        • Corrupted base64<br>
-                        • Key mismatch (same key must be used for encryption and decryption)
-                    </p>
-                `;
+                output.className = 'output show error';
+                outputLabel.textContent = 'Decryption Failed';
+                outputContent.innerHTML = `<p>${escapeHtml(error.message)}</p>`;
             } finally {
-                decryptBtn.disabled = false;
-                decryptBtn.textContent = '🔓 Decrypt';
+                btn.disabled = false;
+                btn.textContent = 'Decrypt';
             }
         }
 
-        // ============================================
-        // TYPE DETECTION
-        // ============================================
-
+        // Type detection
         function detectType(bytes) {
             if (bytes.length < 4) return 'text';
 
-            // PNG: 89 50 4E 47
+            // PNG
             if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47)
                 return 'image';
-
-            // JPEG: FF D8 FF
+            // JPEG
             if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF)
                 return 'image';
-
-            // GIF: 47 49 46
+            // GIF
             if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46)
                 return 'image';
-
-            // BMP: 42 4D
+            // BMP
             if (bytes[0] === 0x42 && bytes[1] === 0x4D)
                 return 'image';
-
-            // PDF: 25 50 44 46
-            if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)
-                return 'text';
 
             return 'text';
         }
 
-        // ============================================
-        // OUTPUT FUNCTIONS
-        // ============================================
-
-        function showTextOutput(bytes, titleEl, contentEl) {
+        // Show text output
+        function showText(bytes, el) {
             let text;
             try {
                 text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
             } catch {
-                text = '[Binary data — Base64 output below]\n\n' + bytesToBase64(bytes);
+                text = '[Binary data]\n\n' + bytesToBase64(bytes);
             }
 
-            titleEl.textContent = '📝 Decrypted Text:';
-            contentEl.innerHTML = `
-                <p style="margin-bottom: 10px; color: #27ae60;">
-                    ✅ Decryption successful! (${bytes.length} bytes)
-                </p>
-                <pre>${escapeHtml(text)}</pre>
-                <button onclick="copyToClipboard(this)" 
-                        style="margin-top: 10px; padding: 8px; background: #3498db; font-size: 13px;">
-                    📋 Copy Text
-                </button>
-            `;
+            el.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
         }
 
-        function showImageOutput(bytes, titleEl, contentEl) {
-            // Detect image type
-            let mimeType = 'image/png';
-            if (bytes[0] === 0xFF && bytes[1] === 0xD8) mimeType = 'image/jpeg';
-            else if (bytes[0] === 0x47 && bytes[1] === 0x49) mimeType = 'image/gif';
-            else if (bytes[0] === 0x42 && bytes[1] === 0x4D) mimeType = 'image/bmp';
+        // Show image output
+        function showImage(bytes, el) {
+            let mime = 'image/png';
+            if (bytes[0] === 0xFF && bytes[1] === 0xD8) mime = 'image/jpeg';
+            else if (bytes[0] === 0x47 && bytes[1] === 0x49) mime = 'image/gif';
+            else if (bytes[0] === 0x42 && bytes[1] === 0x4D) mime = 'image/bmp';
 
-            const base64Image = bytesToBase64(bytes);
-            const dataUrl = `data:${mimeType};base64,` + base64Image;
-            const ext = mimeType.split('/')[1];
+            const base64 = bytesToBase64(bytes);
+            const dataUrl = `data:${mime};base64,${base64}`;
+            const ext = mime.split('/')[1];
 
-            titleEl.textContent = '🖼️ Decrypted Image:';
-            contentEl.innerHTML = `
-                <p style="margin-bottom: 10px; color: #27ae60;">
-                    ✅ Decryption successful! (${bytes.length} bytes)
-                </p>
-                <img src="${dataUrl}" alt="Decrypted Image" />
-                <br><br>
-                <a href="${dataUrl}" download="decrypted_image.${ext}" 
-                   style="display: inline-block; padding: 10px 20px; background: #27ae60; 
-                          color: white; text-decoration: none; border-radius: 5px; font-weight: 600;">
-                    ⬇️ Download Image
+            el.innerHTML = `
+                <img src="${dataUrl}" alt="Decrypted Image">
+                <a href="${dataUrl}" download="decrypted_image.${ext}" class="download-btn">
+                    Download Image
                 </a>
             `;
         }
 
-        // ============================================
-        // CLEAR FUNCTION
-        // ============================================
-
-        function clearAll() {
-            document.getElementById('encryptedInput').value = '';
-            document.getElementById('keyInput').value = '';
-            document.getElementById('ivInput').value = '';
-            document.getElementById('encryptedInfo').textContent = '0 characters';
-            document.getElementById('keyInfo').textContent = 'Key length: 0 / 32';
-            document.getElementById('keyInfo').className = 'key-info';
-            document.getElementById('output').className = 'output';
-            document.getElementById('outputContent').innerHTML = '';
-        }
-
-        // ============================================
-        // HELPER FUNCTIONS
-        // ============================================
-
+        // Helpers
         function base64ToBytes(base64) {
-            const binaryString = atob(base64);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
             }
             return bytes;
         }
@@ -527,15 +402,6 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
-        }
-
-        function copyToClipboard(btn) {
-            const pre = btn.previousElementSibling;
-            navigator.clipboard.writeText(pre.textContent).then(() => {
-                const originalText = btn.textContent;
-                btn.textContent = '✅ Copied!';
-                setTimeout(() => btn.textContent = originalText, 2000);
-            });
         }
     </script>
 </body>
