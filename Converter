@@ -24,7 +24,7 @@
             border-radius: 15px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 30px;
-            max-width: 700px;
+            max-width: 750px;
             width: 100%;
         }
         h1 {
@@ -43,7 +43,10 @@
             font-weight: 600;
             font-size: 14px;
         }
-        input, textarea {
+        .required {
+            color: red;
+        }
+        input, textarea, select {
             width: 100%;
             padding: 10px;
             border: 2px solid #ddd;
@@ -52,13 +55,24 @@
             font-family: 'Courier New', monospace;
             transition: border-color 0.3s;
         }
-        input:focus, textarea:focus {
+        input:focus, textarea:focus, select:focus {
             outline: none;
             border-color: #667eea;
         }
         textarea {
             min-height: 100px;
             resize: vertical;
+        }
+        .key-info {
+            font-size: 12px;
+            color: #888;
+            margin-top: 3px;
+        }
+        .key-valid {
+            color: #27ae60;
+        }
+        .key-invalid {
+            color: #e74c3c;
         }
         button {
             width: 100%;
@@ -78,6 +92,10 @@
         }
         button:active {
             transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
         .output {
             margin-top: 20px;
@@ -102,8 +120,10 @@
             border-radius: 5px;
             overflow-x: auto;
             font-size: 12px;
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
         .output img {
             max-width: 100%;
@@ -120,20 +140,33 @@
             background: #efe;
             border-left-color: #27ae60;
         }
-        .tab-buttons {
+        .info-box {
+            background: #e8f4fd;
+            border-left: 4px solid #3498db;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #2c3e50;
+        }
+        .info-box code {
+            background: #d6eaf8;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .btn-row {
             display: flex;
             gap: 10px;
-            margin-bottom: 15px;
         }
-        .tab-buttons button {
+        .btn-row button {
             flex: 1;
-            background: #eee;
-            color: #333;
-            margin: 0;
         }
-        .tab-buttons button.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .btn-clear {
+            background: #95a5a6 !important;
+        }
+        .btn-clear:hover {
+            background: #7f8c8d !important;
         }
     </style>
 </head>
@@ -141,23 +174,62 @@
     <div class="container">
         <h1>🔐 AES Decrypt Tool</h1>
 
+        <div class="info-box">
+            💡 <strong>Tip:</strong> Copy the encrypted data from SSMS, enter the secret key, and click Decrypt.
+        </div>
+
+        <!-- Encrypted Data Input -->
         <div class="form-group">
-            <label for="encryptedInput">Encrypted Base64 String:</label>
-            <textarea id="encryptedInput" placeholder="Paste encrypted base64 here..."></textarea>
+            <label for="encryptedInput">
+                Encrypted Base64 String <span class="required">*</span>
+            </label>
+            <textarea id="encryptedInput" 
+                      placeholder="Paste encrypted base64 string here..."></textarea>
+            <div class="key-info" id="encryptedInfo">0 characters</div>
         </div>
 
+        <!-- Secret Key Input -->
         <div class="form-group">
-            <label for="keyInput">Secret Key (32 characters):</label>
-            <input type="text" id="keyInput" value="12345678901234567890123456789012" placeholder="Enter 32-char key">
+            <label for="keyInput">
+                Secret Key (32 characters) <span class="required">*</span>
+            </label>
+            <input type="text" 
+                   id="keyInput" 
+                   placeholder="Enter 32-character secret key"
+                   maxlength="32"
+                   autocomplete="off" />
+            <div class="key-info" id="keyInfo">Key length: 0 / 32</div>
         </div>
 
-        <div class="tab-buttons">
-            <button id="btnText" class="active" onclick="setOutputType('text')">📝 Text Output</button>
-            <button id="btnImage" onclick="setOutputType('image')">🖼️ Image Output</button>
+        <!-- IV Input (Optional) -->
+        <div class="form-group">
+            <label for="ivInput">
+                IV (Optional — only if provided separately)
+            </label>
+            <input type="text" 
+                   id="ivInput" 
+                   placeholder="Enter IV (base64) — leave empty if IV is included in ciphertext"
+                   autocomplete="off" />
+            <div class="key-info">Leave empty if IV is the first 16 bytes of the ciphertext</div>
         </div>
 
-        <button onclick="decryptData()">🔓 Decrypt</button>
+        <!-- Output Type -->
+        <div class="form-group">
+            <label for="outputType">Output Type:</label>
+            <select id="outputType">
+                <option value="auto">Auto Detect (Text/Image)</option>
+                <option value="text">📝 Text Output</option>
+                <option value="image">🖼️ Image Output</option>
+            </select>
+        </div>
 
+        <!-- Buttons -->
+        <div class="btn-row">
+            <button onclick="decryptData()" id="decryptBtn">🔓 Decrypt</button>
+            <button onclick="clearAll()" class="btn-clear">🗑️ Clear</button>
+        </div>
+
+        <!-- Output -->
         <div id="output" class="output">
             <h3 id="outputTitle">Decrypted Output:</h3>
             <div id="outputContent"></div>
@@ -165,56 +237,117 @@
     </div>
 
     <script>
-        let outputType = 'text';
+        // ============================================
+        // INPUT VALIDATION
+        // ============================================
 
-        function setOutputType(type) {
-            outputType = type;
-            document.getElementById('btnText').classList.toggle('active', type === 'text');
-            document.getElementById('btnImage').classList.toggle('active', type === 'image');
-        }
+        document.getElementById('keyInput').addEventListener('input', function() {
+            const len = this.value.length;
+            const info = document.getElementById('keyInfo');
+            info.textContent = `Key length: ${len} / 32`;
+            
+            if (len === 32) {
+                info.className = 'key-info key-valid';
+                info.textContent += ' ✅ Valid';
+            } else {
+                info.className = 'key-info key-invalid';
+                info.textContent += ' ❌ Must be 32 characters';
+            }
+        });
+
+        document.getElementById('encryptedInput').addEventListener('input', function() {
+            const len = this.value.trim().length;
+            document.getElementById('encryptedInfo').textContent = `${len} characters`;
+        });
+
+        // ============================================
+        // MAIN DECRYPT FUNCTION
+        // ============================================
 
         async function decryptData() {
             const encryptedBase64 = document.getElementById('encryptedInput').value.trim();
             const keyString = document.getElementById('keyInput').value.trim();
+            const ivInput = document.getElementById('ivInput').value.trim();
+            const outputType = document.getElementById('outputType').value;
+            
             const outputDiv = document.getElementById('output');
             const outputTitle = document.getElementById('outputTitle');
             const outputContent = document.getElementById('outputContent');
+            const decryptBtn = document.getElementById('decryptBtn');
 
             // Reset
             outputDiv.className = 'output show';
             outputContent.innerHTML = '';
-
-            // Validation
-            if (!encryptedBase64) {
-                outputDiv.className = 'output show error';
-                outputTitle.textContent = '❌ Error';
-                outputContent.innerHTML = '<p>Please paste encrypted base64 string.</p>';
-                return;
-            }
-
-            if (keyString.length !== 32) {
-                outputDiv.className = 'output show error';
-                outputTitle.textContent = '❌ Error';
-                outputContent.innerHTML = '<p>Key must be exactly 32 characters. Current length: ' + keyString.length + '</p>';
-                return;
-            }
+            decryptBtn.disabled = true;
+            decryptBtn.textContent = '⏳ Decrypting...';
 
             try {
-                // 1. Base64 decode
-                const encryptedBytes = base64ToBytes(encryptedBase64);
+                // ============================================
+                // VALIDATION
+                // ============================================
+                
+                if (!encryptedBase64) {
+                    throw new Error('Please paste encrypted base64 string.');
+                }
+
+                if (!keyString) {
+                    throw new Error('Please enter secret key.');
+                }
+
+                if (keyString.length !== 32) {
+                    throw new Error(`Key must be exactly 32 characters. Current: ${keyString.length}`);
+                }
+
+                // ============================================
+                // BASE64 DECODE
+                // ============================================
+                
+                let encryptedBytes;
+                try {
+                    encryptedBytes = base64ToBytes(encryptedBase64);
+                } catch (e) {
+                    throw new Error('Invalid base64 string. Please check the encrypted data.');
+                }
 
                 if (encryptedBytes.length < 16) {
                     throw new Error('Encrypted data too short (minimum 16 bytes for IV).');
                 }
 
-                // 2. Extract IV (first 16 bytes)
-                const iv = encryptedBytes.slice(0, 16);
-                const cipherBytes = encryptedBytes.slice(16);
+                // ============================================
+                // IV EXTRACTION
+                // ============================================
+                
+                let iv, cipherBytes;
 
-                // 3. Key
+                if (ivInput) {
+                    // User provided IV separately
+                    try {
+                        iv = base64ToBytes(ivInput);
+                    } catch (e) {
+                        throw new Error('Invalid IV base64 string.');
+                    }
+                    
+                    if (iv.length !== 16) {
+                        throw new Error(`IV must be 16 bytes. Current: ${iv.length}`);
+                    }
+                    
+                    cipherBytes = encryptedBytes;
+                } else {
+                    // IV is first 16 bytes of ciphertext
+                    iv = encryptedBytes.slice(0, 16);
+                    cipherBytes = encryptedBytes.slice(16);
+                }
+
+                // ============================================
+                // KEY
+                // ============================================
+                
                 const keyBytes = new TextEncoder().encode(keyString);
 
-                // 4. Import key
+                // ============================================
+                // IMPORT KEY
+                // ============================================
+                
                 const cryptoKey = await crypto.subtle.importKey(
                     'raw',
                     keyBytes,
@@ -223,7 +356,10 @@
                     ['decrypt']
                 );
 
-                // 5. Decrypt
+                // ============================================
+                // DECRYPT
+                // ============================================
+                
                 const decryptedBuffer = await crypto.subtle.decrypt(
                     { name: 'AES-CBC', iv: iv },
                     cryptoKey,
@@ -232,54 +368,144 @@
 
                 const decryptedBytes = new Uint8Array(decryptedBuffer);
 
-                // 6. Output
+                // ============================================
+                // OUTPUT
+                // ============================================
+                
                 outputDiv.className = 'output show success';
 
-                if (outputType === 'image') {
-                    // Image output
-                    const base64Image = bytesToBase64(decryptedBytes);
-                    const dataUrl = 'data:image/png;base64,' + base64Image;
-
-                    outputTitle.textContent = '🖼️ Decrypted Image:';
-                    outputContent.innerHTML = `
-                        <p style="margin-bottom: 10px; color: #27ae60;">✅ Decryption successful! (${decryptedBytes.length} bytes)</p>
-                        <img src="${dataUrl}" alt="Decrypted Image" />
-                        <br><br>
-                        <a href="${dataUrl}" download="decrypted_image.png" style="display: inline-block; padding: 8px 16px; background: #27ae60; color: white; text-decoration: none; border-radius: 5px;">⬇️ Download Image</a>
-                    `;
-                } else {
-                    // Text output
-                    let text;
-                    try {
-                        text = new TextDecoder('utf-8', { fatal: true }).decode(decryptedBytes);
-                    } catch {
-                        // Binary data — show as base64
-                        text = '[Binary data — Base64 output below]\n\n' + bytesToBase64(decryptedBytes);
-                    }
-
-                    outputTitle.textContent = '📝 Decrypted Text:';
-                    outputContent.innerHTML = `
-                        <p style="margin-bottom: 10px; color: #27ae60;">✅ Decryption successful! (${decryptedBytes.length} bytes)</p>
-                        <pre>${escapeHtml(text)}</pre>
-                    `;
+                // Auto-detect type
+                let finalType = outputType;
+                if (outputType === 'auto') {
+                    finalType = detectType(decryptedBytes);
                 }
+
+                if (finalType === 'image') {
+                    showImageOutput(decryptedBytes, outputTitle, outputContent);
+                } else {
+                    showTextOutput(decryptedBytes, outputTitle, outputContent);
+                }
+
             } catch (error) {
                 outputDiv.className = 'output show error';
                 outputTitle.textContent = '❌ Decryption Failed';
                 outputContent.innerHTML = `
                     <p><strong>Error:</strong> ${escapeHtml(error.message)}</p>
                     <p style="margin-top: 10px; font-size: 12px; color: #666;">
-                        Possible reasons:<br>
-                        • Wrong key<br>
-                        • Wrong IV (first 16 bytes)<br>
+                        <strong>Possible reasons:</strong><br>
+                        • Wrong key (must be 32 characters)<br>
+                        • Wrong IV<br>
                         • Data not encrypted with AES-CBC<br>
-                        • Corrupted base64
+                        • Corrupted base64<br>
+                        • Key mismatch (same key must be used for encryption and decryption)
                     </p>
                 `;
+            } finally {
+                decryptBtn.disabled = false;
+                decryptBtn.textContent = '🔓 Decrypt';
             }
         }
 
-        // Helper: Base64 → Uint8Array
+        // ============================================
+        // TYPE DETECTION
+        // ============================================
+
+        function detectType(bytes) {
+            if (bytes.length < 4) return 'text';
+
+            // PNG: 89 50 4E 47
+            if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47)
+                return 'image';
+
+            // JPEG: FF D8 FF
+            if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF)
+                return 'image';
+
+            // GIF: 47 49 46
+            if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46)
+                return 'image';
+
+            // BMP: 42 4D
+            if (bytes[0] === 0x42 && bytes[1] === 0x4D)
+                return 'image';
+
+            // PDF: 25 50 44 46
+            if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)
+                return 'text';
+
+            return 'text';
+        }
+
+        // ============================================
+        // OUTPUT FUNCTIONS
+        // ============================================
+
+        function showTextOutput(bytes, titleEl, contentEl) {
+            let text;
+            try {
+                text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+            } catch {
+                text = '[Binary data — Base64 output below]\n\n' + bytesToBase64(bytes);
+            }
+
+            titleEl.textContent = '📝 Decrypted Text:';
+            contentEl.innerHTML = `
+                <p style="margin-bottom: 10px; color: #27ae60;">
+                    ✅ Decryption successful! (${bytes.length} bytes)
+                </p>
+                <pre>${escapeHtml(text)}</pre>
+                <button onclick="copyToClipboard(this)" 
+                        style="margin-top: 10px; padding: 8px; background: #3498db; font-size: 13px;">
+                    📋 Copy Text
+                </button>
+            `;
+        }
+
+        function showImageOutput(bytes, titleEl, contentEl) {
+            // Detect image type
+            let mimeType = 'image/png';
+            if (bytes[0] === 0xFF && bytes[1] === 0xD8) mimeType = 'image/jpeg';
+            else if (bytes[0] === 0x47 && bytes[1] === 0x49) mimeType = 'image/gif';
+            else if (bytes[0] === 0x42 && bytes[1] === 0x4D) mimeType = 'image/bmp';
+
+            const base64Image = bytesToBase64(bytes);
+            const dataUrl = `data:${mimeType};base64,` + base64Image;
+            const ext = mimeType.split('/')[1];
+
+            titleEl.textContent = '🖼️ Decrypted Image:';
+            contentEl.innerHTML = `
+                <p style="margin-bottom: 10px; color: #27ae60;">
+                    ✅ Decryption successful! (${bytes.length} bytes)
+                </p>
+                <img src="${dataUrl}" alt="Decrypted Image" />
+                <br><br>
+                <a href="${dataUrl}" download="decrypted_image.${ext}" 
+                   style="display: inline-block; padding: 10px 20px; background: #27ae60; 
+                          color: white; text-decoration: none; border-radius: 5px; font-weight: 600;">
+                    ⬇️ Download Image
+                </a>
+            `;
+        }
+
+        // ============================================
+        // CLEAR FUNCTION
+        // ============================================
+
+        function clearAll() {
+            document.getElementById('encryptedInput').value = '';
+            document.getElementById('keyInput').value = '';
+            document.getElementById('ivInput').value = '';
+            document.getElementById('encryptedInfo').textContent = '0 characters';
+            document.getElementById('keyInfo').textContent = 'Key length: 0 / 32';
+            document.getElementById('keyInfo').className = 'key-info';
+            document.getElementById('output').className = 'output';
+            document.getElementById('outputContent').innerHTML = '';
+        }
+
+        // ============================================
+        // HELPER FUNCTIONS
+        // ============================================
+
         function base64ToBytes(base64) {
             const binaryString = atob(base64);
             const bytes = new Uint8Array(binaryString.length);
@@ -289,7 +515,6 @@
             return bytes;
         }
 
-        // Helper: Uint8Array → Base64
         function bytesToBase64(bytes) {
             let binary = '';
             for (let i = 0; i < bytes.length; i++) {
@@ -298,11 +523,19 @@
             return btoa(binary);
         }
 
-        // Helper: Escape HTML
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function copyToClipboard(btn) {
+            const pre = btn.previousElementSibling;
+            navigator.clipboard.writeText(pre.textContent).then(() => {
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => btn.textContent = originalText, 2000);
+            });
         }
     </script>
 </body>
