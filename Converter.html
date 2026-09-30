@@ -12,7 +12,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f7fa;
             min-height: 100vh;
             display: flex;
@@ -23,7 +23,7 @@
         }
 
         .container {
-            background: #ffffff;
+            background: #fff;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             padding: 40px;
@@ -35,15 +35,8 @@
             font-size: 22px;
             font-weight: 600;
             color: #1a202c;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-
-        .subtitle {
-            font-size: 14px;
-            color: #718096;
-            text-align: center;
             margin-bottom: 30px;
+            text-align: center;
         }
 
         .form-group {
@@ -65,51 +58,40 @@
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             font-size: 14px;
-            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-family: 'Courier New', monospace;
             color: #2d3748;
             background: #f7fafc;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
         }
 
         textarea:focus,
         input[type="text"]:focus {
             outline: none;
             border-color: #4299e1;
-            background: #ffffff;
+            background: #fff;
             box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
         }
 
         textarea {
-            min-height: 90px;
+            min-height: 100px;
             resize: vertical;
-        }
-
-        .hint {
-            font-size: 12px;
-            color: #a0aec0;
-            margin-top: 4px;
         }
 
         button {
             width: 100%;
             padding: 14px;
             background: #4299e1;
-            color: #ffffff;
+            color: #fff;
             border: none;
             border-radius: 8px;
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s ease;
-            margin-top: 10px;
+            transition: background 0.2s;
         }
 
         button:hover:not(:disabled) {
             background: #3182ce;
-        }
-
-        button:active:not(:disabled) {
-            background: #2b6cb0;
         }
 
         button:disabled {
@@ -163,7 +145,7 @@
             padding: 14px;
             border-radius: 6px;
             font-size: 12px;
-            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-family: 'Courier New', monospace;
             overflow-x: auto;
             max-height: 300px;
             overflow-y: auto;
@@ -179,22 +161,17 @@
             border: 1px solid #e2e8f0;
         }
 
-        .output p {
-            font-size: 14px;
-            margin-bottom: 10px;
-            color: #2d3748;
-        }
-
         .download-btn {
             display: inline-block;
             padding: 10px 20px;
             background: #48bb78;
-            color: #ffffff;
+            color: #fff;
             text-decoration: none;
             border-radius: 6px;
             font-size: 13px;
             font-weight: 600;
-            transition: background 0.2s ease;
+            margin-top: 10px;
+            transition: background 0.2s;
         }
 
         .download-btn:hover {
@@ -219,21 +196,15 @@
 <body>
     <div class="container">
         <h1>AES Decrypt Tool</h1>
-        <p class="subtitle">Decrypt AES-256 encrypted data</p>
 
         <div class="form-group">
             <label for="encryptedInput">Encrypted Data (Base64)</label>
-            <textarea id="encryptedInput" 
-                      placeholder="Paste encrypted base64 string..."></textarea>
+            <textarea id="encryptedInput" placeholder="Paste encrypted base64 string..."></textarea>
         </div>
 
         <div class="form-group">
             <label for="keyInput">Secret Key</label>
-            <input type="text" 
-                   id="keyInput" 
-                   placeholder="Enter 32-character key"
-                   maxlength="32"
-                   autocomplete="off">
+            <input type="text" id="keyInput" placeholder="Enter 32-character key" maxlength="32" autocomplete="off">
             <div class="key-status" id="keyStatus">0 / 32 characters</div>
         </div>
 
@@ -251,13 +222,8 @@
             const len = this.value.length;
             const status = document.getElementById('keyStatus');
             status.textContent = `${len} / 32 characters`;
-
-            if (len === 32) {
-                status.className = 'key-status valid';
-                status.textContent += ' ✓';
-            } else {
-                status.className = 'key-status invalid';
-            }
+            status.className = len === 32 ? 'key-status valid' : 'key-status invalid';
+            if (len === 32) status.textContent += ' ✓';
         });
 
         // Main decrypt function
@@ -311,9 +277,7 @@
                 outputLabel.textContent = 'Decrypted Successfully';
 
                 // Detect type
-                const type = detectType(decryptedBytes);
-
-                if (type === 'image') {
+                if (detectType(decryptedBytes) === 'image') {
                     showImage(decryptedBytes, outputContent);
                 } else {
                     showText(decryptedBytes, outputContent);
@@ -332,24 +296,14 @@
         // Type detection
         function detectType(bytes) {
             if (bytes.length < 4) return 'text';
-
-            // PNG
-            if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47)
-                return 'image';
-            // JPEG
-            if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF)
-                return 'image';
-            // GIF
-            if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46)
-                return 'image';
-            // BMP
-            if (bytes[0] === 0x42 && bytes[1] === 0x4D)
-                return 'image';
-
+            if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) return 'image';
+            if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return 'image';
+            if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return 'image';
+            if (bytes[0] === 0x42 && bytes[1] === 0x4D) return 'image';
             return 'text';
         }
 
-        // Show text output
+        // Show text
         function showText(bytes, el) {
             let text;
             try {
@@ -357,11 +311,10 @@
             } catch {
                 text = '[Binary data]\n\n' + bytesToBase64(bytes);
             }
-
             el.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
         }
 
-        // Show image output
+        // Show image
         function showImage(bytes, el) {
             let mime = 'image/png';
             if (bytes[0] === 0xFF && bytes[1] === 0xD8) mime = 'image/jpeg';
@@ -384,17 +337,13 @@
         function base64ToBytes(base64) {
             const binary = atob(base64);
             const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                bytes[i] = binary.charCodeAt(i);
-            }
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
             return bytes;
         }
 
         function bytesToBase64(bytes) {
             let binary = '';
-            for (let i = 0; i < bytes.length; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
+            for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
             return btoa(binary);
         }
 
